@@ -20,6 +20,11 @@ class LocationViewController: UIViewController {
     @IBOutlet weak var weatherLabel: UILabel!
     @IBOutlet weak var getWeatherButton: UIButton!
     @IBOutlet weak var getLocationButton: UIButton!
+    @IBOutlet weak var temperatureLabel: UILabel!
+    @IBOutlet weak var cloudCoverLabel: UILabel!
+    @IBOutlet weak var windLabel: UILabel!
+    @IBOutlet weak var rainLabel: UILabel!
+    @IBOutlet weak var humidityLabel: UILabel!
     
     let locationManager = CLLocationManager()
     var location: CLLocation?
@@ -31,9 +36,16 @@ class LocationViewController: UIViewController {
     var performingReverseGeocoding = false
     var lastGeocodingError: NSError?
     var timer: Timer?
+    var weatherGetter: WeathetGetter?
     
+    var weather: Weather?
     
     @IBAction func getWeatherButtonClicked(_ sender: UIButton) {
+        print("Get Weather")
+        if let weatherGetter = weatherGetter {
+            weatherGetter.getWeatherByCity("Minsk")
+        }
+        updateLabels()
     }
     
     
@@ -65,6 +77,16 @@ class LocationViewController: UIViewController {
             messageLabel.text = "Location Services Disabled"
         }
         
+        weatherGetter = WeathetGetter(delegate: self)
+        
+        weatherLabel.text = ""
+        temperatureLabel.text = ""
+        cloudCoverLabel.text = ""
+        windLabel.text = ""
+        rainLabel.text = ""
+        humidityLabel.text = ""
+        
+        
         startLocationManager()
         updateLabels()
         configureButtons()
@@ -85,14 +107,7 @@ class LocationViewController: UIViewController {
      // Pass the selected object to the new view controller.
      }
      */
-    
-    func showAllertLocationServicecDenied() {
-        let allert = UIAlertController(title: "Location Services Disabled", message: "Please turn on location services for this app in Settings", preferredStyle: .alert)
-        let action = UIAlertAction(title: "OK", style: .default, handler: nil)
-        allert.addAction(action)
-        //self.present(allert, animated: true, completion: nil)
-        present(allert, animated: true, completion: nil)
-    }
+
     
     func updateLabels() {
         if let location = location {
@@ -100,7 +115,7 @@ class LocationViewController: UIViewController {
             longitudeLabel.text = String(format: "%.8f", location.coordinate.longitude)
             messageLabel.text = "Updating location"
             if !updatingLocation {
-                messageLabel.text = "Tap ‘Get Weather’"
+                messageLabel.text = ""
             }
             
             if let placemark = placemark {
@@ -238,6 +253,8 @@ extension LocationViewController: CLLocationManagerDelegate {
             if newLocation.horizontalAccuracy <= locationManager.desiredAccuracy {
                 print("We get location")
                 stopLocationManager()
+                
+                weatherGetter?.getWeatherByCoordinates(newLocation.coordinate.latitude, longitude: newLocation.coordinate.longitude)
                 updateLabels()
                 configureButtons()
             }
@@ -261,5 +278,52 @@ extension LocationViewController: CLLocationManagerDelegate {
         }
     }
     
+    func showSimpleAlert(title: String, message: String) {
+        let alert = UIAlertController(
+            title: title,
+            message: message,
+            preferredStyle: .alert
+        )
+        let okAction = UIAlertAction(
+            title: "OK",
+            style:  .default,
+            handler: nil
+        )
+        alert.addAction(okAction)
+        present(
+            alert,
+            animated: true,
+            completion: nil
+        )
+    }
+    
+}
+
+extension LocationViewController: WeatherGetterDelegate {
+    
+    func didGetWeather(weather: Weather) {
+        self.weather = weather
+        
+        DispatchQueue.main.async {
+            self.weatherLabel.text = weather.weatherDescription
+            self.temperatureLabel.text = String(format: "%.1f", weather.tempCelsius) + " °C"
+            self.cloudCoverLabel.text = String(weather.cloudCover) + " %"
+            self.windLabel.text = String(weather.windSpeed) + " m/s"
+            if let rain = weather.rainfallInLast3Hours {
+                self.rainLabel.text = String(rain) + " mm"
+            } else {
+                self.rainLabel.text = "None"
+            }
+            self.humidityLabel.text = String(weather.humidity) + " %"
+        }
+    }
+    
+    
+    func didNotGetWeather(error: Error) {
+        print(error)
+        DispatchQueue.main.async {
+            self.showSimpleAlert(title: "Can't get the weather", message: "The weather service isn't responding.")
+        }
+    }
     
 }
