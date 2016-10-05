@@ -8,7 +8,7 @@
 
 import UIKit
 import CoreLocation
-
+import CoreData
 
 class LocationViewController: UIViewController {
     
@@ -40,12 +40,11 @@ class LocationViewController: UIViewController {
     
     var weather: Weather?
     
+    var managedObjectContext : NSManagedObjectContext!
+    
+    
     @IBAction func getWeatherButtonClicked(_ sender: UIButton) {
-        print("Get Weather")
-        if let weatherGetter = weatherGetter {
-            weatherGetter.getWeatherByCity("Minsk")
-        }
-        updateLabels()
+        
     }
     
     
@@ -98,15 +97,7 @@ class LocationViewController: UIViewController {
     }
     
     
-    /*
-     // MARK: - Navigation
-     
-     // In a storyboard-based application, you will often want to do a little preparation before navigation
-     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-     // Get the new view controller using segue.destinationViewController.
-     // Pass the selected object to the new view controller.
-     }
-     */
+    
 
     
     func updateLabels() {
@@ -126,6 +117,26 @@ class LocationViewController: UIViewController {
                 addressLabel.text = "Error finding adress"
             } else {
                 addressLabel.text = "No Address Found"
+            }
+            
+            if let weather = weather {
+                weatherLabel.text = weather.weatherDescription
+                temperatureLabel.text = String(format: "%.1f", weather.tempCelsius) + " °C"
+                cloudCoverLabel.text = String(weather.cloudCover) + " %"
+                windLabel.text = String(weather.windSpeed) + " m/s"
+                if let rain = weather.rainfallInLast3Hours {
+                    rainLabel.text = String(rain) + " mm"
+                } else {
+                    rainLabel.text = "None"
+                }
+                humidityLabel.text = String(weather.humidity) + " %"
+            } else {
+                weatherLabel.text = "Updating weather data"
+                temperatureLabel.text = ""
+                cloudCoverLabel.text = ""
+                windLabel.text = ""
+                rainLabel.text = ""
+                humidityLabel.text = ""
             }
         } else {
             latitudeLabel.text = ""
@@ -166,6 +177,7 @@ class LocationViewController: UIViewController {
             locationManager.startUpdatingLocation()
             updatingLocation = true
             lastLocationError = nil
+            weather = nil
             timer = Timer.scheduledTimer(timeInterval: 60, target: self, selector: #selector(self.didTimeOut), userInfo: nil, repeats: false)
         }
     }
@@ -214,6 +226,53 @@ class LocationViewController: UIViewController {
             configureButtons()
         }
     }
+    
+    func showSimpleAlert(title: String, message: String) {
+        let alert = UIAlertController(
+            title: title,
+            message: message,
+            preferredStyle: .alert
+        )
+        let okAction = UIAlertAction(
+            title: "OK",
+            style:  .default,
+            handler: nil
+        )
+        alert.addAction(okAction)
+        present(
+            alert,
+            animated: true,
+            completion: nil
+        )
+    }
+    
+    func sendDataToCoreData() {
+        guard let weather = self.weather, let location = self.location, let placemark = self.placemark else {
+            print("**** Error sending data to CoreData ***\n")
+            return
+        }
+        
+        let weatherData = NSEntityDescription.insertNewObject( forEntityName: "WeatherData", into: managedObjectContext) as! WeatherData
+        
+        weatherData.latitude = location.coordinate.latitude
+        weatherData.longitude = location.coordinate.longitude
+        weatherData.address = stringFromPlacemark(placemark)
+        weatherData.weatherDescription = weather.weatherDescription
+        weatherData.weatherTemperature = weather.tempCelsius
+        weatherData.weatherCloudCover = Int16(weather.cloudCover)
+        weatherData.weatherWind = Int16(weather.windSpeed)
+        weatherData.weatherRain = weather.rainfallInLast3Hours as NSNumber?
+        weatherData.weatherHumidity = Int16(weather.humidity)
+        weatherData.date = weather.dateAndTime as NSDate
+        weatherData.city = placemark.locality!
+        
+        do {
+            try self.managedObjectContext.save()
+        } catch {
+            fatalCoreDataError(error: error)
+        }
+    }
+
     
    
     
@@ -268,34 +327,18 @@ extension LocationViewController: CLLocationManagerDelegate {
                     self.lastGeocodingError = error as NSError?
                     if error == nil, let p = placemarks , !p.isEmpty {
                         self.placemark = p.last!
+                        self.sendDataToCoreData()
                     } else {
                         self.placemark = nil
                     }
                     self.performingReverseGeocoding = false
                     self.updateLabels()
                 })
+                
             }
         }
     }
     
-    func showSimpleAlert(title: String, message: String) {
-        let alert = UIAlertController(
-            title: title,
-            message: message,
-            preferredStyle: .alert
-        )
-        let okAction = UIAlertAction(
-            title: "OK",
-            style:  .default,
-            handler: nil
-        )
-        alert.addAction(okAction)
-        present(
-            alert,
-            animated: true,
-            completion: nil
-        )
-    }
     
 }
 
@@ -305,16 +348,7 @@ extension LocationViewController: WeatherGetterDelegate {
         self.weather = weather
         
         DispatchQueue.main.async {
-            self.weatherLabel.text = weather.weatherDescription
-            self.temperatureLabel.text = String(format: "%.1f", weather.tempCelsius) + " °C"
-            self.cloudCoverLabel.text = String(weather.cloudCover) + " %"
-            self.windLabel.text = String(weather.windSpeed) + " m/s"
-            if let rain = weather.rainfallInLast3Hours {
-                self.rainLabel.text = String(rain) + " mm"
-            } else {
-                self.rainLabel.text = "None"
-            }
-            self.humidityLabel.text = String(weather.humidity) + " %"
+            self.updateLabels()
         }
     }
     
