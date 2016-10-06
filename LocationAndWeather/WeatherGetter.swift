@@ -17,9 +17,7 @@ class WeathetGetter {
     
     private let openWeatherMapBaseURL = "http://api.openweathermap.org/data/2.5/weather"
     private let openWeatherMapAPIKey = "5b067e2232f356d99005fd5df6aded29"
-    
     private var delegate: WeatherGetterDelegate
-    
     
     init(delegate: WeatherGetterDelegate) {
         self.delegate = delegate
@@ -37,8 +35,6 @@ class WeathetGetter {
     
     private func getWeather(_ weatherRequstURL: URL) {
         let session = URLSession.shared
-        
-        
         let dataTask = session.dataTask(with: weatherRequstURL){
             (data: Data?, response: URLResponse?, error: Error?) in
             if let networkError = error {

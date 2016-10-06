@@ -22,7 +22,7 @@ struct Weather {
     let weatherDescription: String
     let weatherIconID: String
     
-    private let temp: Double
+    let temp: Double
     var tempCelsius: Double {
         get {
             return temp - 273.15
@@ -45,7 +45,10 @@ struct Weather {
     let sunrise: Date
     let sunset: Date
     
+    
     init(weatherData: [String: AnyObject]) {
+        
+        // Parse JSON dict to Weather struct
         
         dateAndTime = Date(timeIntervalSince1970: weatherData["dt"] as! TimeInterval)
         city = weatherData["name"] as! String
@@ -87,7 +90,6 @@ struct Weather {
         sunset = Date(timeIntervalSince1970: sysDict["sunset"] as! TimeInterval)
         
     }
-    
     
     func getShortDescription() -> String {
         return "\(mainWeather) \(weatherDescription)\n" + "Tempretute: \(tempCelsius) C\n" + "Clouds: \(cloudCover)"

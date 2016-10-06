@@ -19,6 +19,7 @@
 		275467F31DA3FA1A004E909B /* WeatherData+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 275467F11DA3FA1A004E909B /* WeatherData+CoreDataProperties.swift */; };
 		275467F71DA42994004E909B /* HistoryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 275467F61DA42994004E909B /* HistoryViewController.swift */; };
 		275467F91DA42C90004E909B /* HistoryCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 275467F81DA42C90004E909B /* HistoryCell.swift */; };
+		275467FF1DA51ABC004E909B /* DetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 275467FE1DA51ABC004E909B /* DetailsViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +37,7 @@
 		275467F11DA3FA1A004E909B /* WeatherData+CoreDataProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "WeatherData+CoreDataProperties.swift"; path = "../WeatherData+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		275467F61DA42994004E909B /* HistoryViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HistoryViewController.swift; sourceTree = "<group>"; };
 		275467F81DA42C90004E909B /* HistoryCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HistoryCell.swift; sourceTree = "<group>"; };
+		275467FE1DA51ABC004E909B /* DetailsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DetailsViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,21 +70,54 @@
 		275467D21DA235DC004E909B /* LocationAndWeather */ = {
 			isa = PBXGroup;
 			children = (
+				275467FB1DA4F82F004E909B /* Supporting Files */,
+				275467FA1DA4F81F004E909B /* Data */,
+				275467FC1DA4F845004E909B /* Controllers */,
+				275467FD1DA4F852004E909B /* Views */,
+			);
+			path = LocationAndWeather;
+			sourceTree = "<group>";
+		};
+		275467FA1DA4F81F004E909B /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				275467E91DA2B659004E909B /* WeatherGetter.swift */,
 				275467F01DA3FA1A004E909B /* WeatherData+CoreDataClass.swift */,
 				275467F11DA3FA1A004E909B /* WeatherData+CoreDataProperties.swift */,
-				275467D31DA235DC004E909B /* AppDelegate.swift */,
-				275467E71DA23B9D004E909B /* LocationViewController.swift */,
-				275467F61DA42994004E909B /* HistoryViewController.swift */,
-				275467F81DA42C90004E909B /* HistoryCell.swift */,
-				275467E91DA2B659004E909B /* WeatherGetter.swift */,
 				275467EB1DA39C1F004E909B /* Weather.swift */,
+			);
+			name = Data;
+			sourceTree = "<group>";
+		};
+		275467FB1DA4F82F004E909B /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				275467D31DA235DC004E909B /* AppDelegate.swift */,
 				275467D91DA235DC004E909B /* Main.storyboard */,
 				275467DC1DA235DC004E909B /* Assets.xcassets */,
 				275467DE1DA235DC004E909B /* LaunchScreen.storyboard */,
 				275467E11DA235DC004E909B /* Info.plist */,
 				275467ED1DA3F862004E909B /* DataModel.xcdatamodeld */,
 			);
-			path = LocationAndWeather;
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		275467FC1DA4F845004E909B /* Controllers */ = {
+			isa = PBXGroup;
+			children = (
+				275467E71DA23B9D004E909B /* LocationViewController.swift */,
+				275467FE1DA51ABC004E909B /* DetailsViewController.swift */,
+				275467F61DA42994004E909B /* HistoryViewController.swift */,
+			);
+			name = Controllers;
+			sourceTree = "<group>";
+		};
+		275467FD1DA4F852004E909B /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				275467F81DA42C90004E909B /* HistoryCell.swift */,
+			);
+			name = Views;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -167,6 +202,7 @@
 				275467F71DA42994004E909B /* HistoryViewController.swift in Sources */,
 				275467D41DA235DC004E909B /* AppDelegate.swift in Sources */,
 				275467EC1DA39C1F004E909B /* Weather.swift in Sources */,
+				275467FF1DA51ABC004E909B /* DetailsViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -328,6 +364,7 @@
 				275467E61DA235DC004E909B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 

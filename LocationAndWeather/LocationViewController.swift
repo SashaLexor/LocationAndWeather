@@ -12,13 +12,12 @@ import CoreData
 
 class LocationViewController: UIViewController {
     
+    // MARK: - IB Properties
     
-    @IBOutlet weak var messageLabel: UILabel!
     @IBOutlet weak var latitudeLabel: UILabel!
     @IBOutlet weak var longitudeLabel: UILabel!
     @IBOutlet weak var addressLabel: UILabel!
     @IBOutlet weak var weatherLabel: UILabel!
-    @IBOutlet weak var getWeatherButton: UIButton!
     @IBOutlet weak var getLocationButton: UIButton!
     @IBOutlet weak var temperatureLabel: UILabel!
     @IBOutlet weak var cloudCoverLabel: UILabel!
@@ -26,26 +25,29 @@ class LocationViewController: UIViewController {
     @IBOutlet weak var rainLabel: UILabel!
     @IBOutlet weak var humidityLabel: UILabel!
     
+    // MARK: - Custom Properties
+    
+    // Core Location
     let locationManager = CLLocationManager()
     var location: CLLocation?
     var updatingLocation = false
+    // Geocoding
     var lastLocationError: NSError?
-    
     let geocoder = CLGeocoder()
     var placemark: CLPlacemark? // Contains the address results.
     var performingReverseGeocoding = false
     var lastGeocodingError: NSError?
+    // For stop updating location
     var timer: Timer?
+    // Getting Weather
     var weatherGetter: WeathetGetter?
-    
     var weather: Weather?
-    
+    var date: Date?
+    // From AppDelegate for CoreData
     var managedObjectContext : NSManagedObjectContext!
     
     
-    @IBAction func getWeatherButtonClicked(_ sender: UIButton) {
-        
-    }
+    // MARK: - IB Actions
     
     
     @IBAction func getLocationButtonClicked(_ sender: AnyObject) {
@@ -63,19 +65,19 @@ class LocationViewController: UIViewController {
     }
     
     
+    // MARK: - ViewController Default Methods
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        // checking status for using location services
         let authStatus = CLLocationManager.authorizationStatus()
-        
         if authStatus == .notDetermined {
             locationManager.requestWhenInUseAuthorization() // Allows to get location updates while app is open and the user is interacting with app
         }
-        
         if authStatus == .denied || authStatus == .restricted {
-            messageLabel.text = "Location Services Disabled"
+            addressLabel.text = "Location Services Disabled"
         }
-        
         weatherGetter = WeathetGetter(delegate: self)
         
         weatherLabel.text = ""
@@ -84,7 +86,6 @@ class LocationViewController: UIViewController {
         windLabel.text = ""
         rainLabel.text = ""
         humidityLabel.text = ""
-        
         
         startLocationManager()
         updateLabels()
@@ -97,18 +98,19 @@ class LocationViewController: UIViewController {
     }
     
     
-    
-
+    // MARK: - Custom Methods
     
     func updateLabels() {
+        //updating coordinate labels
         if let location = location {
-            latitudeLabel.text = String(format: "%.8f", location.coordinate.latitude)
-            longitudeLabel.text = String(format: "%.8f", location.coordinate.longitude)
-            messageLabel.text = "Updating location"
+            latitudeLabel.text = String(format: "%.6f", location.coordinate.latitude)
+            longitudeLabel.text = String(format: "%.6f", location.coordinate.longitude)
+            addressLabel.text = "Updating location..."
             if !updatingLocation {
-                messageLabel.text = ""
+                addressLabel.text = " "
             }
             
+            // updating adress labels
             if let placemark = placemark {
                 addressLabel.text = stringFromPlacemark(placemark)
             } else if performingReverseGeocoding {
@@ -119,9 +121,11 @@ class LocationViewController: UIViewController {
                 addressLabel.text = "No Address Found"
             }
             
+            // updating weather labels
             if let weather = weather {
                 weatherLabel.text = weather.weatherDescription
-                temperatureLabel.text = String(format: "%.1f", weather.tempCelsius) + " °C"
+                let sign = weather.tempCelsius > 0 ? "+" : "-"
+                temperatureLabel.text = sign + String(format: "%.1f", weather.tempCelsius) + "°"
                 cloudCoverLabel.text = String(weather.cloudCover) + " %"
                 windLabel.text = String(weather.windSpeed) + " m/s"
                 if let rain = weather.rainfallInLast3Hours {
@@ -132,15 +136,16 @@ class LocationViewController: UIViewController {
                 humidityLabel.text = String(weather.humidity) + " %"
             } else {
                 weatherLabel.text = "Updating weather data"
-                temperatureLabel.text = ""
-                cloudCoverLabel.text = ""
-                windLabel.text = ""
-                rainLabel.text = ""
-                humidityLabel.text = ""
+                temperatureLabel.text = "0"
+                cloudCoverLabel.text = "0"
+                windLabel.text = "0"
+                rainLabel.text = "0"
+                humidityLabel.text = "0"
             }
         } else {
-            latitudeLabel.text = ""
-            longitudeLabel.text = ""
+            //updating coordinate labels
+            latitudeLabel.text = "0"
+            longitudeLabel.text = "0"
             let statusMessage: String
             if let error = lastLocationError {
                 if error.domain == kCLErrorDomain && error.code == CLError.denied.rawValue {
@@ -153,27 +158,32 @@ class LocationViewController: UIViewController {
             } else {
                 statusMessage = "Updating location"
             }
-            messageLabel.text = statusMessage
+            addressLabel.text = statusMessage
+            
+            weatherLabel.text = "no location"
+            temperatureLabel.text = "0"
+            cloudCoverLabel.text = "0"
+            windLabel.text = "0"
+            rainLabel.text = "0"
+            humidityLabel.text = "0"
         }
     }
+    
     
     func configureButtons() {
         if updatingLocation {
             getLocationButton.setTitle("Stop", for: .normal)
-            getWeatherButton.isHidden = true
         } else {
-            getLocationButton.setTitle("Get location", for: .normal)
-            getWeatherButton.isHidden = false
+            getLocationButton.setTitle("Update", for: .normal)
         }
     }
     
-   
     
     func startLocationManager() {
         print("Start Location Manager")
         if CLLocationManager.locationServicesEnabled() {
             locationManager.delegate = self
-            locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters // accuracy < 10m
+            locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters // kCLLocationAccuracyNearestTenMeters // accuracy < 10m
             locationManager.startUpdatingLocation()
             updatingLocation = true
             lastLocationError = nil
@@ -194,6 +204,7 @@ class LocationViewController: UIViewController {
         }
     }
     
+    // Parse Placemark to string
     func stringFromPlacemark(_ placemark: CLPlacemark) -> String {
         var line1 = ""
         if let subThoroughfare = placemark.subThoroughfare {
@@ -207,8 +218,9 @@ class LocationViewController: UIViewController {
         if let locality = placemark.locality {
             line2 += locality + " "
         }
-        if let area = placemark.administrativeArea {
-            line2 += area + " "
+        if let _ = placemark.administrativeArea {
+            //print("Area: \(area)")
+            //line2 += area + " "
         }
         if let postalCode = placemark.postalCode {
             line2 += postalCode
@@ -217,9 +229,11 @@ class LocationViewController: UIViewController {
         return line1 + "\n" + line2
     }
     
+    // For stopping updationg location after time interval
     func didTimeOut() {
         print("*** time out ***")
         if location == nil {
+            weather = nil
             stopLocationManager()
             lastLocationError = NSError(domain: "MyLocationsErrorDomain", code: 1, userInfo: nil)
             updateLabels()
@@ -247,11 +261,11 @@ class LocationViewController: UIViewController {
     }
     
     func sendDataToCoreData() {
-        guard let weather = self.weather, let location = self.location, let placemark = self.placemark else {
+        print("*** Send Data to CoreData")
+        guard let weather = self.weather, let location = self.location, let placemark = self.placemark, let date = self.date else {
             print("**** Error sending data to CoreData ***\n")
             return
         }
-        
         let weatherData = NSEntityDescription.insertNewObject( forEntityName: "WeatherData", into: managedObjectContext) as! WeatherData
         
         weatherData.latitude = location.coordinate.latitude
@@ -263,18 +277,19 @@ class LocationViewController: UIViewController {
         weatherData.weatherWind = Int16(weather.windSpeed)
         weatherData.weatherRain = weather.rainfallInLast3Hours as NSNumber?
         weatherData.weatherHumidity = Int16(weather.humidity)
-        weatherData.date = weather.dateAndTime as NSDate
+        weatherData.date = date as NSDate
         weatherData.city = placemark.locality!
+        print("!!! Weather Data: \(weatherData)")
         
         do {
             try self.managedObjectContext.save()
         } catch {
+            print("FATAL ERROR TO WRITTING DATA TO CORE DATA")
             fatalCoreDataError(error: error)
         }
     }
-
     
-   
+    
     
     
 }
@@ -298,43 +313,45 @@ extension LocationViewController: CLLocationManagerDelegate {
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         let newLocation = locations.last!
-        print("Did update locations: \(newLocation)")
-        
+        // select better location update evry 5 Sec & better accuracy
         if newLocation.timestamp.timeIntervalSinceNow < -5 || newLocation.horizontalAccuracy < 0 {
             return
         }
-        
+        // fing first or better location
         if location == nil || location!.horizontalAccuracy > newLocation.horizontalAccuracy {
             location = newLocation
             lastLocationError = nil
             updateLabels()
             configureButtons()
+            // find final location
             if newLocation.horizontalAccuracy <= locationManager.desiredAccuracy {
                 print("We get location")
                 stopLocationManager()
-                
+                date = Date(timeIntervalSinceNow: 0)
+                // Start updating weather
                 weatherGetter?.getWeatherByCoordinates(newLocation.coordinate.latitude, longitude: newLocation.coordinate.longitude)
                 updateLabels()
                 configureButtons()
-            }
-            
-            if !performingReverseGeocoding {
-                print("Try geocoding")
-                performingReverseGeocoding = true
-                geocoder.reverseGeocodeLocation(newLocation, completionHandler: {
-                    placemarks, error in
-                    print("Found placemarks: \(placemarks) Error: \(error)")
-                    self.lastGeocodingError = error as NSError?
-                    if error == nil, let p = placemarks , !p.isEmpty {
-                        self.placemark = p.last!
-                        self.sendDataToCoreData()
-                    } else {
-                        self.placemark = nil
-                    }
-                    self.performingReverseGeocoding = false
-                    self.updateLabels()
-                })
                 
+                // Start updating placemark & reverce geocoding
+                if !performingReverseGeocoding {
+                    print("Try geocoding")
+                    performingReverseGeocoding = true
+                    geocoder.reverseGeocodeLocation(newLocation, completionHandler: {
+                        placemarks, error in
+                        print("Found placemarks: \(placemarks) Error: \(error)")
+                        self.lastGeocodingError = error as NSError?
+                        if error == nil, let p = placemarks , !p.isEmpty {
+                            self.placemark = p.last!
+                            self.sendDataToCoreData()
+                        } else {
+                            self.placemark = nil
+                        }
+                        self.performingReverseGeocoding = false
+                        self.updateLabels()
+                        self.configureButtons()
+                    })
+                }
             }
         }
     }
@@ -346,7 +363,6 @@ extension LocationViewController: WeatherGetterDelegate {
     
     func didGetWeather(weather: Weather) {
         self.weather = weather
-        
         DispatchQueue.main.async {
             self.updateLabels()
         }

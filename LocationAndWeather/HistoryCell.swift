@@ -26,7 +26,7 @@ class HistoryCell: UITableViewCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        // Initialization code
+        backgroundColor = UIColor.clear
     }
 
     override func setSelected(_ selected: Bool, animated: Bool) {
@@ -40,8 +40,8 @@ class HistoryCell: UITableViewCell {
         dateLabel.text = dateFormatter.string(from: weatherData.date as Date)
         
         cityLabel.text = weatherData.city
-        latitudeLabel.text = String(weatherData.latitude)
-        longitudeLabel.text = String(weatherData.longitude)
+        latitudeLabel.text = "Lat: " + String(format: "%.6f", weatherData.latitude)
+        longitudeLabel.text = "Long: " + String(format: "%.6f",weatherData.longitude)
     }
 
 }
